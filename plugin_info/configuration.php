@@ -47,6 +47,13 @@ if (!isConnect('admin')) {
                 <input class="configKey form-control" data-l1key="mqtt_host" placeholder="127.0.0.1" />
             </div>
         </div>
+        <div class="form-group">
+            <label class="col-lg-4 control-label">{{Utiliser MQTT Manager}}</label>
+            <div class="col-lg-2">
+                <input type="checkbox" class="configKey" data-l1key="use_mqtt_manager" />
+            </div>
+            <div class="col-lg-4 help-block">Si coché, hôte/port/login MQTT sont récupérés automatiquement depuis le plugin mqtt2.</div>
+        </div>
 
         <div class="form-group">
             <label class="col-lg-4 control-label">{{Port MQTT}}</label>
