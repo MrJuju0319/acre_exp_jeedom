@@ -1,0 +1,34 @@
+{
+  "id": "acreexp",
+  "name": "ACRE SPC MQTT",
+  "pluginVersion": "0.1.0",
+  "description": {
+    "fr_FR": "Plugin Jeedom pour intégrer facilement acre_exp, connecter une centrale ACRE/SPC via MQTT, créer automatiquement les équipements et envoyer les commandes depuis Jeedom."
+  },
+  "licence": "AGPL",
+  "author": "Nemesius",
+  "require": "4.4",
+  "os": {
+    "min": 11,
+    "max": 12.99
+  },
+  "category": "security",
+  "hasDependency": true,
+  "hasOwnDeamon": true,
+  "maxDependancyInstallTime": 20,
+  "changelog": "https://github.com/MrJuju0319/acre_exp",
+  "documentation": "https://github.com/MrJuju0319/acre_exp",
+  "changelog_beta": "https://github.com/MrJuju0319/acre_exp",
+  "documentation_beta": "https://github.com/MrJuju0319/acre_exp",
+  "language": [
+    "fr_FR"
+  ],
+  "compatibility": [
+    "atlas",
+    "luna",
+    "rpi",
+    "docker",
+    "diy",
+    "mobile"
+  ]
+}

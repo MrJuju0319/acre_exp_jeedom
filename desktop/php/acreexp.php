@@ -1,0 +1,131 @@
+<?php
+if (!isConnect('admin')) {
+    throw new Exception('{{401 - Accès non autorisé}}');
+}
+$plugin = plugin::byId('acreexp');
+sendVarToJS('eqType', $plugin->getId());
+$eqLogics = eqLogic::byType($plugin->getId());
+?>
+
+<div class="row row-overflow">
+    <div class="col-xs-12 eqLogicThumbnailDisplay">
+        <legend><i class="fas fa-cog"></i> {{Gestion}}</legend>
+        <div class="eqLogicThumbnailContainer">
+            <div class="cursor eqLogicAction logoPrimary" data-action="gotoPluginConf">
+                <i class="fas fa-wrench"></i>
+                <br />
+                <span>{{Configuration}}</span>
+            </div>
+            <div class="cursor logoSecondary" id="bt_syncAcreExp">
+                <i class="fas fa-sync"></i>
+                <br />
+                <span>{{Synchroniser}}</span>
+            </div>
+        </div>
+
+        <legend><i class="fas fa-table"></i> {{Mes équipements ACRE}}</legend>
+        <?php if (count($eqLogics) == 0) { ?>
+            <div class="alert alert-info">{{Aucun équipement. Le démon les créera automatiquement dès réception des topics MQTT.}}</div>
+        <?php } else { ?>
+            <input class="form-control" placeholder="{{Rechercher}}" id="in_searchEqlogic" />
+            <div class="eqLogicThumbnailContainer">
+                <?php foreach ($eqLogics as $eqLogic) {
+                    $opacity = ($eqLogic->getIsEnable()) ? '' : 'disableCard'; ?>
+                    <div class="eqLogicDisplayCard cursor <?php echo $opacity; ?>" data-eqLogic_id="<?php echo $eqLogic->getId(); ?>">
+                        <i class="fas fa-shield-alt"></i>
+                        <br />
+                        <span class="name"><?php echo $eqLogic->getHumanName(true, true); ?></span>
+                    </div>
+                <?php } ?>
+            </div>
+        <?php } ?>
+    </div>
+
+    <div class="col-xs-12 eqLogic" style="display: none;">
+        <div class="input-group pull-right" style="display:inline-flex;">
+            <span class="input-group-btn">
+                <a class="btn btn-sm btn-default eqLogicAction roundedLeft" data-action="configure"><i class="fas fa-cogs"></i> {{Configuration avancée}}</a>
+                <a class="btn btn-sm btn-success eqLogicAction" data-action="save"><i class="fas fa-check-circle"></i> {{Sauvegarder}}</a>
+                <a class="btn btn-sm btn-danger eqLogicAction roundedRight" data-action="remove"><i class="fas fa-minus-circle"></i> {{Supprimer}}</a>
+            </span>
+        </div>
+
+        <ul class="nav nav-tabs" role="tablist">
+            <li role="presentation" class="active"><a href="#eqlogictab" aria-controls="home" role="tab" data-toggle="tab"><i class="fas fa-tachometer-alt"></i> {{Equipement}}</a></li>
+            <li role="presentation"><a href="#commandtab" aria-controls="profile" role="tab" data-toggle="tab"><i class="fas fa-list-alt"></i> {{Commandes}}</a></li>
+        </ul>
+
+        <div class="tab-content">
+            <div role="tabpanel" class="tab-pane active" id="eqlogictab">
+                <br />
+                <form class="form-horizontal">
+                    <fieldset>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">{{Nom de l'équipement}}</label>
+                            <div class="col-sm-3">
+                                <input type="text" class="eqLogicAttr form-control" data-l1key="id" style="display:none;" />
+                                <input type="text" class="eqLogicAttr form-control" data-l1key="name" placeholder="{{Nom}}" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">{{Objet parent}}</label>
+                            <div class="col-sm-3">
+                                <select class="eqLogicAttr form-control" data-l1key="object_id">
+                                    <option value="">{{Aucun}}</option>
+                                    <?php
+                                    foreach (jeeObject::all() as $object) {
+                                        echo '<option value="' . $object->getId() . '">' . str_repeat('&nbsp;&nbsp;', $object->getConfiguration('parentNumber')) . $object->getName() . '</option>';
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">{{Catégorie}}</label>
+                            <div class="col-sm-9">
+                                <?php
+                                foreach (jeedom::getConfiguration('eqLogic:category') as $key => $value) {
+                                    echo '<label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="category" data-l2key="' . $key . '" />' . $value['name'] . '</label>';
+                                }
+                                ?>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">{{Options}}</label>
+                            <div class="col-sm-9">
+                                <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isEnable" checked />{{Activer}}</label>
+                                <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isVisible" checked />{{Visible}}</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">{{Identifiant logique}}</label>
+                            <div class="col-sm-5">
+                                <input type="text" class="eqLogicAttr form-control" data-l1key="logicalId" readonly />
+                            </div>
+                        </div>
+                    </fieldset>
+                </form>
+            </div>
+
+            <div role="tabpanel" class="tab-pane" id="commandtab">
+                <br />
+                <table id="table_cmd" class="table table-bordered table-condensed">
+                    <thead>
+                        <tr>
+                            <th>{{ID}}</th>
+                            <th>{{Nom}}</th>
+                            <th>{{Type}}</th>
+                            <th>{{Options}}</th>
+                            <th>{{Etat}}</th>
+                            <th>{{Actions}}</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php include_file('desktop', 'acreexp', 'js', 'acreexp'); ?>
+<?php include_file('core', 'plugin.template', 'js'); ?>
