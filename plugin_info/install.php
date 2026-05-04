@@ -10,6 +10,7 @@ function acreexp_install() {
     config::save('mqtt_port', '1883', 'acreexp');
     config::save('mqtt_user', '', 'acreexp');
     config::save('mqtt_pass', '', 'acreexp');
+    config::save('use_mqtt_manager', 1, 'acreexp');
     config::save('mqtt_base_topic', 'acre_XXX', 'acreexp');
     config::save('watchdog_refresh_interval', '2', 'acreexp');
     config::save('watchdog_controller_refresh_interval', '60', 'acreexp');
@@ -20,6 +21,7 @@ function acreexp_update() {
         'spc_language' => '253',
         'mqtt_host' => '127.0.0.1',
         'mqtt_port' => '1883',
+        'use_mqtt_manager' => 1,
         'mqtt_base_topic' => 'acre_XXX',
         'watchdog_refresh_interval' => '2',
         'watchdog_controller_refresh_interval' => '60'

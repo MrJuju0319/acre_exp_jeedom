@@ -1,6 +1,35 @@
 <?php
 
 class acreexp extends eqLogic {
+    public static function getMqttConfig() {
+        $config = array(
+            'host' => config::byKey('mqtt_host', 'acreexp', '127.0.0.1'),
+            'port' => config::byKey('mqtt_port', 'acreexp', '1883'),
+            'user' => config::byKey('mqtt_user', 'acreexp', ''),
+            'pass' => config::byKey('mqtt_pass', 'acreexp', ''),
+        );
+
+        if (config::byKey('use_mqtt_manager', 'acreexp', 0) != 1) {
+            return $config;
+        }
+
+        // Compatibilité avec plugin officiel mqtt2
+        $managerHost = trim((string) config::byKey('mqtt::address', 'mqtt2', ''));
+        $managerPort = trim((string) config::byKey('mqtt::port', 'mqtt2', ''));
+        $managerUser = (string) config::byKey('mqtt::username', 'mqtt2', '');
+        $managerPass = (string) config::byKey('mqtt::password', 'mqtt2', '');
+
+        if ($managerHost != '') {
+            $config['host'] = $managerHost;
+        }
+        if ($managerPort != '') {
+            $config['port'] = $managerPort;
+        }
+        $config['user'] = $managerUser;
+        $config['pass'] = $managerPass;
+
+        return $config;
+    }
 
     public static function deamon_info() {
         $return = array();
@@ -19,10 +48,11 @@ class acreexp extends eqLogic {
     public static function deamon_start($_debug = false) {
         self::deamon_stop();
 
-        $mqttHost = config::byKey('mqtt_host', 'acreexp', '127.0.0.1');
-        $mqttPort = config::byKey('mqtt_port', 'acreexp', '1883');
-        $mqttUser = config::byKey('mqtt_user', 'acreexp', '');
-        $mqttPass = config::byKey('mqtt_pass', 'acreexp', '');
+        $mqttConfig = self::getMqttConfig();
+        $mqttHost = $mqttConfig['host'];
+        $mqttPort = $mqttConfig['port'];
+        $mqttUser = $mqttConfig['user'];
+        $mqttPass = $mqttConfig['pass'];
         $baseTopic = config::byKey('mqtt_base_topic', 'acreexp', 'acre_XXX');
 
         $logLevel = 'info';
@@ -116,6 +146,7 @@ class acreexp extends eqLogic {
         $type = $parts[0];
         $id = $parts[1];
         $field = isset($parts[2]) ? $parts[2] : 'value';
+        self::ensureAlarmStructure($type, $id);
 
         $eqLogicalId = 'acreexp_' . $type . '_' . $id;
 
@@ -153,6 +184,46 @@ class acreexp extends eqLogic {
         }
 
         $cmd->event($payload);
+    }
+
+    private static function ensureAlarmStructure($_type, $_id) {
+        $centralId = 'acreexp_centrale';
+        $central = self::byLogicalId($centralId, 'acreexp');
+        if (!is_object($central)) {
+            $central = new self();
+            $central->setEqType_name('acreexp');
+            $central->setLogicalId($centralId);
+            $central->setName('Centrale Alarme');
+            $central->setIsEnable(1);
+            $central->setIsVisible(1);
+            $central->setConfiguration('acre_type', 'centrale');
+            $central->setConfiguration('acre_id', 'master');
+            $central->save();
+            log::add('acreexp', 'info', 'Création automatique de la centrale d\'alarme');
+        }
+
+        if (!in_array($_type, array('zones', 'outputs', 'inputs', 'entrees', 'sorties'))) {
+            return;
+        }
+
+        $pointId = 'acreexp_point_' . $_type . '_' . $_id;
+        $point = self::byLogicalId($pointId, 'acreexp');
+        if (is_object($point)) {
+            return;
+        }
+
+        $point = new self();
+        $point->setEqType_name('acreexp');
+        $point->setLogicalId($pointId);
+        $point->setName('Point ' . strtoupper($_type) . ' ' . $_id);
+        $point->setIsEnable(1);
+        $point->setIsVisible(1);
+        $point->setConfiguration('acre_type', 'point');
+        $point->setConfiguration('acre_id', $_id);
+        $point->setConfiguration('point_kind', $_type);
+        $point->save();
+
+        log::add('acreexp', 'info', 'Création automatique du point E/S : ' . $point->getName());
     }
 
     private static function createDefaultCommands($_eqLogic, $_type, $_id) {
@@ -208,10 +279,11 @@ class acreexpCmd extends cmd {
         $eqLogic = $this->getEqLogic();
 
         $baseTopic = config::byKey('mqtt_base_topic', 'acreexp', 'acre_XXX');
-        $mqttHost = config::byKey('mqtt_host', 'acreexp', '127.0.0.1');
-        $mqttPort = config::byKey('mqtt_port', 'acreexp', '1883');
-        $mqttUser = config::byKey('mqtt_user', 'acreexp', '');
-        $mqttPass = config::byKey('mqtt_pass', 'acreexp', '');
+        $mqttConfig = acreexp::getMqttConfig();
+        $mqttHost = $mqttConfig['host'];
+        $mqttPort = $mqttConfig['port'];
+        $mqttUser = $mqttConfig['user'];
+        $mqttPass = $mqttConfig['pass'];
 
         $type = $eqLogic->getConfiguration('acre_type');
         $id = $eqLogic->getConfiguration('acre_id');
